@@ -4,6 +4,7 @@ from torchvision import datasets, transforms
 from torch.utils.data.distributed import DistributedSampler
 import torch
 import model as mdl
+import torch.distributed as dist
 
 NUM_THREADS = 5
 backend = "gloo"
@@ -14,6 +15,7 @@ world_size = 1
 batch_size = int(256/world_size)
 device="cpu"
 torch.set_num_threads(NUM_THREADS)
+print_every_iteration = 20
 
 def init_process(master_ip, rank, size, backend='gloo'):
     """ Initialize the distributed environment. """
@@ -23,9 +25,38 @@ def init_process(master_ip, rank, size, backend='gloo'):
 #    vgg_model(rank, size)
 
 
-def train_model(rank, model, train_loader, optimizer, criterion, epoch):
-    # TODO
-    pass
+def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
+    model.train()
+    total_loss = 0
+    correct = 0
+
+    for i, (input, target) in enumerate(train_loader):
+        input, target = input.to(device), target.to(device)
+        optimizer.zero_grad()
+        output = model(input)
+        train_loss = criterion(output, target)
+        train_loss.backward()
+
+        group = dist.new_group([_ for _ in range(world_size)])
+        for p in model.parameters():
+            grad_list = [torch.zeros_like(p.grad) for _ in range(world_size)]
+            if rank == 0:
+                dist.gather(p.grad, grad_list, group=group, async_op=False)
+
+                mean = sum(grad_list) / world_size
+
+                scatter_list = [mean for _ in range(world_size)]
+                dist.scatter(p.grad, scatter_list, group=group, async_op=False)
+            else:
+                dist.gather(p.grad, group=group, async_op=False)
+                dist.scatter(p.grad, group=group, async_op=False)
+
+        optimizer.step()
+
+        if i % print_every_iteration == 0:
+            print("loss: ", train_loss.item(), "|acc: (", correct, ") ", 100.*correct/len(train_loader.dataset),
+                  "%|avgLoss: ", total_loss / (i+1.), "|rank: ", rank)
+
 
 def test_model(model, test_loader, criterion):
     model.eval()
@@ -86,7 +117,7 @@ def create_model():
                           momentum=0.9, weight_decay=0.0001)
     # running training for one epoch
     for epoch in range(1):
-        train_model(rank, model, train_loader, optimizer, training_criterion, epoch)
+        train_model(rank, model, train_loader, optimizer, training_criterion)
         test_model(model, test_loader, training_criterion)
 
 def main():
