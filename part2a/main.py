@@ -5,6 +5,10 @@ from torch.utils.data.distributed import DistributedSampler
 import torch
 import model as mdl
 import torch.distributed as dist
+import random
+import numpy as np
+import argparse
+
 
 NUM_THREADS = 5
 backend = "gloo"
@@ -15,7 +19,7 @@ world_size = 1
 batch_size = int(256/world_size)
 device="cpu"
 torch.set_num_threads(NUM_THREADS)
-print_every_iteration = 20
+print_every_iteration = 1
 
 def init_process(master_ip, rank, size, backend='gloo'):
     """ Initialize the distributed environment. """
@@ -38,13 +42,16 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
         train_loss.backward()
 
         group = dist.new_group([_ for _ in range(world_size)])
+        first_param = 1
         for p in model.parameters():
             grad_list = [torch.zeros_like(p.grad) for _ in range(world_size)]
             if rank == 0:
                 dist.gather(p.grad, grad_list, group=group, async_op=False)
 
                 mean = sum(grad_list) / world_size
-
+                if first_param == 1:
+#                    print(grad_list)
+                    first_param = 0
                 scatter_list = [mean for _ in range(world_size)]
                 dist.scatter(p.grad, scatter_list, group=group, async_op=False)
             else:
@@ -52,11 +59,16 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
                 dist.scatter(p.grad, group=group, async_op=False)
 
         optimizer.step()
+        total_loss += train_loss.item()
+        pred = output.max(1, keepdim=True)[1]
+        correct += pred.eq(target.view_as(pred)).sum().item()
+
 
         if i % print_every_iteration == 0:
             print("loss: ", train_loss.item(), "|acc: (", correct, ") ", 100.*correct/len(train_loader.dataset),
                   "%|avgLoss: ", total_loss / (i+1.), "|rank: ", rank)
 
+    return None
 
 def test_model(model, test_loader, criterion):
     model.eval()
@@ -100,6 +112,7 @@ def create_model():
                                                     num_workers=2,
                                                     batch_size=batch_size,
                                                     sampler=sampler,
+                                                    shuffle=False,
                                                     pin_memory=True)
 
     test_set = datasets.CIFAR10(root="./input", train=False,
@@ -121,8 +134,24 @@ def create_model():
         test_model(model, test_loader, training_criterion)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--rank', dest='rank', type=int, help='rank, 0')
+    parser.add_argument('--num-nodes', dest='num_nodes', type=int, help='num-nodes, 4')
+    args = parser.parse_args()
+    global rank,world_size,batch_size
+    rank = args.rank
+    world_size = args.num_nodes
+    batch_size = int(256 / world_size)
+    print("running rank = " + str(rank))
     init_process(master_ip, rank, world_size)
     create_model()
 
 if __name__ == "__main__":
+    seed = 960904
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
     main()

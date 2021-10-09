@@ -12,7 +12,7 @@ NUM_THREADS = 4
 torch.set_num_threads(NUM_THREADS)
 
 batch_size = 256 # batch for one node
-print_every_iteration = 20
+print_every_iteration = 1
 
 def train_model(model, train_loader, optimizer, criterion, epoch):
     """
@@ -82,7 +82,7 @@ def main():
                                                     num_workers=2,
                                                     batch_size=batch_size,
                                                     sampler=None,
-                                                    shuffle=True,
+                                                    shuffle=False,
                                                     pin_memory=True)
     test_set = datasets.CIFAR10(root="./input", train=False,
                                 download=True, transform=transform_test)
