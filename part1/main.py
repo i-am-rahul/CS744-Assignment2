@@ -4,6 +4,9 @@ import torch.optim as optim
 
 from datetime import datetime, date, time, timedelta
 import model as mdl
+import random
+import numpy as np
+
 device = "cpu"
 NUM_THREADS = 4
 torch.set_num_threads(NUM_THREADS)
@@ -37,8 +40,8 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
         total_loss += train_loss.item()
 
         if i % print_every_iteration == 0:
-            print("loss: ", train_loss.item(), "|acc: ", 100.*correct/len(train_loader.dataset),
-                  "|avgLoss: ", total_loss / (i+1.), "|i: ", i)
+            print("loss: ", train_loss.item(), "|acc: (", correct, ") ", 100.*correct/len(train_loader.dataset),
+                  "%|avgLoss: ", total_loss / (i+1.), "|i: ", i)
 
     return None
 
@@ -101,4 +104,12 @@ def main():
         test_model(model, test_loader, training_criterion)
 
 if __name__ == "__main__":
+    seed = 960904
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
+#    np.random.seed(seed)
     main()
