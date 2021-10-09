@@ -19,7 +19,7 @@ world_size = 1
 batch_size = int(256/world_size)
 device="cpu"
 torch.set_num_threads(NUM_THREADS)
-print_every_iteration = 1
+print_every_iteration = 20
 
 def init_process(master_ip, rank, size, backend='gloo'):
     """ Initialize the distributed environment. """
