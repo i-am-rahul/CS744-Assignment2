@@ -13,7 +13,7 @@ import argparse
 NUM_THREADS = 5
 backend = "gloo"
 master_ip = "10.10.1.1"
-master_port = 29500 + 1
+master_port = 29500 + 51
 rank = 0
 world_size = 1
 batch_size = int(256/world_size)
