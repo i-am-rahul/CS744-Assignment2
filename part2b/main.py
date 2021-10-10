@@ -44,7 +44,7 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
         train_loss.backward()
 
         for p in model.parameters():
-            dist.all_reduce(p.grad, op=dist.reduce_op.SUM, group=group, async_op=False)
+            dist.all_reduce(p.grad, op=dist.ReduceOp.SUM, group=group, async_op=False)
             p.grad /= world_size
         optimizer.step()
         total_loss += train_loss.item()
