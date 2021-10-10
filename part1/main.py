@@ -12,7 +12,7 @@ NUM_THREADS = 4
 torch.set_num_threads(NUM_THREADS)
 
 batch_size = 256 # batch for one node
-print_every_iteration = 1
+print_every_iteration = 20
 
 def train_model(model, train_loader, optimizer, criterion, epoch):
     """
