@@ -34,6 +34,7 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
     model.train()
     total_loss = 0
     correct = 0
+    group = dist.new_group([_ for _ in range(world_size)])
 
     for i, (input, target) in enumerate(train_loader):
         input, target = input.to(device), target.to(device)
@@ -42,17 +43,12 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
         train_loss = criterion(output, target)
         train_loss.backward()
 
-        group = dist.new_group([_ for _ in range(world_size)])
-        first_param = 1
         for p in model.parameters():
             grad_list = [torch.zeros_like(p.grad) for _ in range(world_size)]
             if rank == 0:
                 dist.gather(p.grad, grad_list, group=group, async_op=False)
 
                 mean = sum(grad_list) / world_size
-                if first_param == 1:
-#                    print(grad_list)
-                    first_param = 0
                 scatter_list = [mean for _ in range(world_size)]
                 dist.scatter(p.grad, scatter_list, group=group, async_op=False)
             else:
