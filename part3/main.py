@@ -13,7 +13,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 NUM_THREADS = 5
 backend = "gloo"
 master_ip = "10.10.1.1"
-master_port = 29500 + 1
+master_port = 29500 + 91
 rank = 0
 world_size = 1
 batch_size = int(256/world_size)
@@ -25,6 +25,7 @@ def init_process(master_ip, rank, size, backend='gloo'):
     """ Initialize the distributed environment. """
     os.environ['MASTER_ADDR'] = master_ip
     os.environ['MASTER_PORT'] = str(master_port)
+    os.environ['GLOO_SOCKET_IFNAME'] = "eth1"
     dist.init_process_group(backend, rank=rank, world_size=size)
 
 
