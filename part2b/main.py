@@ -67,7 +67,7 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
         if i % print_every_iteration == 0:
             print("loss: ", train_loss.item(), "|acc: (", correct, ") ", 100.*correct/len(train_loader.dataset),
                   "%|avgLoss: ", total_loss / (i+1.), "|rank: ", rank)
-
+    print("avg training time for ", iters, " -> ", (datetime.now() - now).total_seconds()/iters, "s")
     return None
 
 def test_model(model, test_loader, criterion):
