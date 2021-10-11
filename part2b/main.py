@@ -146,7 +146,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--rank', dest='rank', type=int, help='rank, 0')
     parser.add_argument('--num-nodes', dest='num_nodes', type=int, help='num-nodes, 4')
-    parser.add_argument('--seed', dest='seed', type=int, help='seed, starting number', default=960904)
+    parser.add_argument('--seed', dest='seed', type=int, help='seed, starting number', default=1267)
     args = parser.parse_args()
     seed = args.seed
     print("running with seed:", seed)
