@@ -137,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', dest='seed', type=int, help='seed, starting number', default=960904)
     args = parser.parse_args()
     seed = args.seed
+    print("running with seed:", seed)
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
