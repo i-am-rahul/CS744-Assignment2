@@ -106,6 +106,8 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--rank', dest='rank', type=int, help='rank, 0', nargs='?')
+    parser.add_argument('--num-nodes', dest='num_nodes', type=int, help='num-nodes, 4', nargs='?')
     parser.add_argument('--seed', dest='seed', type=int, help='seed, starting number', default=960904)
     args = parser.parse_args()
     seed = args.seed
