@@ -8,6 +8,7 @@ import random
 import numpy as np
 import argparse
 from torch.nn.parallel import DistributedDataParallel as DDP
+from datetime import datetime, date, time, timedelta
 
 
 NUM_THREADS = 5
@@ -20,6 +21,7 @@ batch_size = int(256/world_size)
 device = "cpu"
 torch.set_num_threads(NUM_THREADS)
 print_every_iteration = 20
+limited_iterations = 40 # -1 for no limit
 
 def init_process(master_ip, rank, size, backend='gloo'):
     """ Initialize the distributed environment. """
@@ -34,6 +36,8 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
     total_loss = 0
     correct = 0
     group = dist.new_group([_ for _ in range(world_size)])
+    now = datetime.now()
+    iters = 0
 
     for i, (input, target) in enumerate(train_loader):
         input, target = input.to(device), target.to(device)
@@ -50,7 +54,13 @@ def train_model(rank, model, train_loader, optimizer, criterion, epoch=0):
         pred = output.max(1, keepdim=True)[1]
         correct += pred.eq(target.view_as(pred)).sum().item()
 
-
+        iters += 1
+        if i == 0:
+            # discarding time for 1st round
+            now = datetime.now()
+            iters = 0
+        elif limited_iterations != -1 and i >= limited_iterations - 1:
+            break
         if i % print_every_iteration == 0:
             print("loss: ", train_loss.item(), "|acc: (", correct, ") ", 100.*correct/len(train_loader.dataset),
                   "%|avgLoss: ", total_loss / (i+1.), "|rank: ", rank)

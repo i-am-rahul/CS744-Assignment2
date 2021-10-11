@@ -14,6 +14,7 @@ torch.set_num_threads(NUM_THREADS)
 
 batch_size = 256 # batch for one node
 print_every_iteration = 20
+limited_iterations = 40 # -1 for no limit
 
 def train_model(model, train_loader, optimizer, criterion, epoch):
     """
@@ -27,7 +28,8 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
     model.train()
     total_loss = 0
     correct = 0
-
+    now = datetime.now()
+    iters = 0
     for i, (input, target) in enumerate(train_loader):
         input, target = input.to(device), target.to(device)
         optimizer.zero_grad()
@@ -39,11 +41,17 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
         pred = output.max(1, keepdim=True)[1]
         correct += pred.eq(target.view_as(pred)).sum().item()
         total_loss += train_loss.item()
-
+        iters += 1
+        if i == 0:
+            # discarding time for 1st round
+            now = datetime.now()
+            iters = 0
+        elif limited_iterations != -1 and i >= limited_iterations - 1:
+            break
         if i % print_every_iteration == 0:
             print("loss: ", train_loss.item(), "|acc: (", correct, ") ", 100.*correct/len(train_loader.dataset),
                   "%|avgLoss: ", total_loss / (i+1.), "|i: ", i)
-
+    print("avg training time for ", iters, " -> ", (datetime.now() - now).total_seconds()/iters, "s")
     return None
 
 def test_model(model, test_loader, criterion):
