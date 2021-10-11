@@ -1,6 +1,7 @@
 import torch
 from torchvision import datasets, transforms
 import torch.optim as optim
+import argparse
 
 from datetime import datetime, date, time, timedelta
 import model as mdl
@@ -104,7 +105,10 @@ def main():
         test_model(model, test_loader, training_criterion)
 
 if __name__ == "__main__":
-    seed = 960904
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--seed', dest='seed', type=int, help='seed, starting number', default=960904)
+    args = parser.parse_args()
+    seed = args.seed
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False

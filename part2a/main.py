@@ -131,10 +131,6 @@ def create_model():
         test_model(model, test_loader, training_criterion)
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--rank', dest='rank', type=int, help='rank, 0')
-    parser.add_argument('--num-nodes', dest='num_nodes', type=int, help='num-nodes, 4')
-    args = parser.parse_args()
     global rank,world_size,batch_size
     rank = args.rank
     world_size = args.num_nodes
@@ -144,7 +140,12 @@ def main():
     create_model()
 
 if __name__ == "__main__":
-    seed = 960904
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--rank', dest='rank', type=int, help='rank, 0')
+    parser.add_argument('--num-nodes', dest='num_nodes', type=int, help='num-nodes, 4')
+    parser.add_argument('--seed', dest='seed', type=int, help='seed, starting number', default=960904)
+    args = parser.parse_args()
+    seed = args.seed
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
