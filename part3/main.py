@@ -148,7 +148,6 @@ if __name__ == "__main__":
     parser.add_argument('--seed', dest='seed', type=int, help='seed, starting number', default=1267)
     parser.add_argument('--master-ip', dest='master_ip', type=str, help='seed, starting number', default='10.10.1.1')
     args = parser.parse_args()
-    global master_ip, seed
     master_ip = args.master_ip
     seed = args.seed
     print("running with seed:", seed)
